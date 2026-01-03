@@ -92,18 +92,20 @@ function M.close_layout()
 
 	close_win(state.wins.file_tree)
 	close_buf(state.bufs.file_tree)
-	state.wins.file_tree = nil
-	state.bufs.file_tree = nil
+	state.wins.file_tree = -1
+	state.bufs.file_tree = -1
 
 	close_win(state.wins.buffer_bar)
 	close_buf(state.bufs.buffer_bar)
-	state.wins.buffer_bar = nil
-	state.bufs.buffer_bar = nil
+	state.wins.buffer_bar = -1
+	state.bufs.buffer_bar = -1
 
 	close_win(state.wins.terminal)
 	close_buf(state.bufs.terminal)
-	state.wins.terminal = nil
-	state.bufs.terminal = nil
+	state.wins.terminal = -1
+	state.bufs.terminal = -1
+
+	state.active = false
 end
 
 function M.make_layout()
@@ -132,14 +134,17 @@ function M.make_layout()
 	vim.wo[state.wins.file_tree].wrap = false
 	vim.wo[state.wins.file_tree].number = false
 	vim.wo[state.wins.file_tree].winfixbuf = true
-
-	vim.bo[term_buf].buflisted = false
-	vim.wo[state.wins.terminal].winfixbuf = true
+	vim.wo[state.wins.file_tree].statusline = ''
 
 	vim.bo[buf_bar_buf].modifiable = false
 	vim.bo[buf_bar_buf].buflisted = false
 	vim.wo[state.wins.buffer_bar].wrap = false
 	vim.wo[state.wins.buffer_bar].winfixbuf = true
+	vim.wo[state.wins.buffer_bar].statusline = ''
+
+	vim.bo[term_buf].buflisted = false
+	vim.wo[state.wins.terminal].winfixbuf = true
+	vim.wo[state.wins.terminal].statusline = ''
 
 	setup_keymaps('tree', tree_buf)
 	setup_keymaps('terminal', term_buf)
@@ -155,6 +160,8 @@ function M.make_layout()
 			vim.defer_fn(bufferbar.render, 10)
 		end
 	})
+
+	state.active = true
 end
 
 return M

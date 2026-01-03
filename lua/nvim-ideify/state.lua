@@ -1,5 +1,7 @@
 local M = {}
 
+M.active = false
+
 M.wins = {
 	main = -1,
 	file_tree = -1,

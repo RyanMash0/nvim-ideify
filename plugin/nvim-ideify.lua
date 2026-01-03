@@ -14,11 +14,19 @@ vim.api.nvim_create_user_command(
 	require('nvim-ideify').close,
 	{ nargs = 0 }
 )
+
+vim.api.nvim_create_user_command(
+	'IDEifyToggle',
+	require('nvim-ideify').toggle,
+	{ nargs = 0 }
+)
+
 vim.api.nvim_create_user_command(
 	'IDEifyRefreshFileTree',
 	require('nvim-ideify').refresh_tree,
 	{ nargs = 0 }
 )
+
 vim.api.nvim_create_user_command(
 	'IDEifyRefreshBufferBar',
 	require('nvim-ideify').refresh_bufferbar,

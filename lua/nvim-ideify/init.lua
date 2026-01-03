@@ -6,6 +6,14 @@ local bufferbar = require('nvim-ideify.bufferbar')
 
 M.open = ui.make_layout
 M.close = ui.close_layout
+M.toggle = function()
+	local state = require('nvim-ideify.state')
+	if state.active then
+		ui.close_layout()
+	else
+		ui.make_layout()
+	end
+end
 
 M.refresh_tree = tree.render
 M.refresh_bufferbar = bufferbar.render

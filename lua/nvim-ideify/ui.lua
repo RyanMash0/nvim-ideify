@@ -32,8 +32,7 @@ local function setup_tree_keymaps(buf_id)
 	vim.keymap.set('n', '<S-C-M>', descend, opts)
 	vim.keymap.set('n', '<LeftMouse>', function ()
 		if vim.fn.getmousepos().winid ~= state.wins.file_tree then
-			return '<LeftMouse>'
-		end
+			return '<LeftMouse>' end
 		update()
 		return '<LeftMouse>'
 	end, opts)
@@ -87,6 +86,115 @@ local function setup_keymaps(buf_type, buf_id)
 	end
 end
 
+M.win_structure = {}
+M.height_ratio = 1
+M.width_ratio = 1
+
+local function parse_structure(node, depth, idx)
+	local new_depth
+	local new_node
+	local win_config
+	local win_buf
+
+	for i = 1, #node[2] do
+		new_depth = depth + 1
+		new_node = node[2][i]
+		if new_node[1] ~= 'leaf' then
+			if not M.win_structure[new_depth] then
+				M.win_structure[new_depth] = {}
+			end
+
+			table.insert(M.win_structure[new_depth], {
+				split_type = new_node[1],
+				where_split = { idx, i },
+				wins = {}
+			})
+
+			parse_structure(new_node, new_depth, #M.win_structure[new_depth])
+		end
+
+		while new_node[1] ~= 'leaf' do
+			new_node = new_node[2][1]
+			new_depth = new_depth + 1
+		end
+
+		win_config = vim.api.nvim_win_get_config(new_node[2])
+		if M.win_structure[depth][idx].split_type == "row" then
+			win_config.split = 'right'
+		else
+			win_config.split = 'below'
+		end
+
+		if win_config.height then
+			win_config.height = math.floor(win_config.height * M.height_ratio)
+		end
+		if win_config.width then
+			win_config.width = math.floor(win_config.width * M.width_ratio)
+		end
+
+		win_buf = vim.api.nvim_win_get_buf(new_node[2])
+
+		M.win_structure[depth][idx].wins[i] = {
+			id = new_node[2],
+			config = win_config,
+			buffer = win_buf,
+		}
+	end
+end
+
+local function parse_layout()
+	local win_layout = vim.fn.winlayout()
+	local wins = vim.api.nvim_tabpage_list_wins(0)
+	M.win_structure = {}
+	if #wins == 1 then return end
+	local file_tree_width = config.options.file_tree.win_opts.width
+	local buffer_bar_height = config.options.buffer_bar.win_opts.height
+	local terminal_height = config.options.terminal.win_opts.height
+	local height_reduction = buffer_bar_height + terminal_height
+	M.width_ratio = (vim.o.columns - file_tree_width) / vim.o.columns
+	M.height_ratio = (vim.o.lines - height_reduction) / vim.o.lines
+
+	local initial_entry = {
+		split_type = win_layout[1],
+		where_split = nil,
+		wins = {},
+	}
+	M.win_structure = { { initial_entry } }
+	parse_structure(win_layout, 1, 1)
+	state.wins.main = M.win_structure[1][1].wins[1].id
+
+	for _, win in ipairs(wins) do
+		if win ~= state.wins.main then
+			vim.api.nvim_win_hide(win)
+		end
+	end
+end
+
+local function open_wins()
+	vim.api.nvim_set_current_win(state.wins.main)
+	local win
+	local split
+	local win_id
+
+	for i = 1, #M.win_structure do
+		for j = 1, #M.win_structure[i] do
+			split = M.win_structure[i][j].where_split
+
+			if split then
+				win_id = M.win_structure[i - 1][split[1]].wins[split[2]].id
+				M.win_structure[i][j].wins[1].id = win_id
+				vim.api.nvim_set_current_win(win_id)
+			end
+
+			for k = 2, #M.win_structure[i][j].wins do
+				win = M.win_structure[i][j].wins[k]
+				win.id = vim.api.nvim_open_win(win.buffer, true, win.config)
+			end
+		end
+	end
+	vim.api.nvim_set_current_win(state.wins.main)
+end
+
 function M.close_layout()
 	utils.check_or_make_main_win()
 
@@ -110,6 +218,7 @@ end
 
 function M.make_layout()
 	M.close_layout()
+	parse_layout()
 
 	local tree_buf = vim.api.nvim_create_buf(false, true)
 	local buf_bar_buf = vim.api.nvim_create_buf(false, true)
@@ -161,6 +270,7 @@ function M.make_layout()
 		end
 	})
 
+	open_wins()
 	state.active = true
 end
 

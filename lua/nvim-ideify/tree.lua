@@ -110,7 +110,9 @@ end
 function M.change_dir(path)
 	utils.check_or_make_main_win()
 	vim.schedule(function ()
-		vim.cmd('bufdo cd ' .. path)
+		for _, win in ipairs(vim.api.nvim_list_wins()) do
+			vim.api.nvim_win_call(win, function () vim.cmd.lcd(path) end)
+		end
 		M.render()
 		vim.api.nvim_set_current_win(state.wins.file_tree)
 	end)

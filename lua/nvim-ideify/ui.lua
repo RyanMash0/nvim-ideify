@@ -213,11 +213,18 @@ function M.close_layout()
 	state.wins.terminal = -1
 	state.bufs.terminal = -1
 
+	if state.equalalways then
+		vim.opt.equalalways = true
+	end
+
 	state.active = false
 end
 
 function M.make_layout()
 	M.close_layout()
+	if state.equalalways then
+		vim.opt.equalalways = false
+	end
 	parse_layout()
 
 	local tree_buf = vim.api.nvim_create_buf(false, true)

@@ -86,13 +86,15 @@ function M.render()
 	local dir_str = ''
 	local truncate_len = config.options.buffer_bar.name_max_length
 	local max_len
+	local abs_path
 	for _, buf in ipairs(normal_buffers) do
 		buf_name = vim.api.nvim_buf_get_name(buf)
 
 		file_name = buf_name:match('[^/]+$') or ''
 		file_name = truncate_end(file_name, truncate_len)
 
-		dir_name = buf_name:gsub(vim.fs.abspath('.') .. '/', '')
+		abs_path = vim.fs.abspath('.'):gsub('[%(%)%.%%%+%-%*%?%[%]%^%$]', '%%%0')
+		dir_name = buf_name:gsub(abs_path .. '/', '')
 		dir_name = './' .. dir_name:gsub('[^/]+$', '')
 		dir_name = truncate_middle(dir_name, #file_name)
 

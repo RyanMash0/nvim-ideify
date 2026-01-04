@@ -2,6 +2,7 @@ local M = {}
 local config = require('nvim-ideify.config')
 local state = require('nvim-ideify.state')
 local utils = require('nvim-ideify.utils')
+local bufferbar = require('nvim-ideify.bufferbar')
 
 local function generate_tree_action(buf_id, ex_table, line, func)
 	vim.bo[buf_id].modifiable = true
@@ -115,6 +116,7 @@ function M.change_dir(path)
 		end
 		M.render()
 		vim.api.nvim_set_current_win(state.wins.file_tree)
+		bufferbar.render()
 	end)
 end
 

@@ -2,89 +2,12 @@ local M = {}
 local config = require('nvim-ideify.config')
 local state = require('nvim-ideify.state')
 local utils = require('nvim-ideify.utils')
-local tree = require('nvim-ideify.tree')
-local bufferbar = require('nvim-ideify.bufferbar')
+local pos = require('nvim-ideify.position')
 
-local function close_buf(id)
-	if id and vim.api.nvim_buf_is_valid(id) then
-		vim.api.nvim_buf_delete(id, { force = true, })
-	end
-end
-
-local function close_win(id)
-	if id and vim.api.nvim_win_is_valid(id) then
-		vim.api.nvim_win_close(id, true)
-	end
-end
-
-local function setup_tree_keymaps(buf_id)
-	local opts = { buffer = buf_id, expr = true, remap = false }
-	local update = vim.schedule_wrap(tree.action)
-	local make = vim.schedule_wrap(tree.render)
-	local descend = vim.schedule_wrap(tree.descend)
-	local ascend = vim.schedule_wrap(tree.ascend)
-
-	vim.keymap.set('n', 'r', make, opts)
-	vim.keymap.set('n', '-', ascend, opts)
-	vim.keymap.set('n', '<CR>', update, opts)
-	vim.keymap.set('n', '<S-CR>', descend, opts)
-	vim.keymap.set('n', '<C-M>', update, opts)
-	vim.keymap.set('n', '<S-C-M>', descend, opts)
-	vim.keymap.set('n', '<LeftMouse>', function ()
-		if vim.fn.getmousepos().winid ~= state.wins.file_tree then
-			return '<LeftMouse>' end
-		update()
-		return '<LeftMouse>'
-	end, opts)
-end
-
-local function setup_terminal_keymaps(buf_id)
-	local opts = { buffer = buf_id, remap = false }
-	vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', opts)
-end
-
-local function setup_bufferbar_keymaps(buf_id)
-	local opts = { buffer = buf_id, expr = true, remap = false }
-	local switch = vim.schedule_wrap(bufferbar.switch_buffer)
-
-	vim.keymap.set('n', '<CR>', switch, opts)
-	vim.keymap.set('n', '<C-M>', switch, opts)
-	vim.keymap.set('n', '<LeftMouse>', function()
-		if vim.fn.getmousepos().winid ~= state.wins.buffer_bar then
-			return '<LeftMouse>'
-		end
-		switch()
-		return '<LeftMouse>'
-	end, opts)
-
-	local function generate_buf_scroll(flags)
-		return function()
-			local pos = vim.fn.col('.')
-			vim.fn.search('[^ \\u2502]\\+', flags, vim.fn.line('.'))
-			local new_pos = vim.fn.col('.')
-			if new_pos == pos and new_pos > 3 then
-				vim.cmd.normal('$b')
-			elseif new_pos == pos then
-				vim.cmd.normal('0w')
-			end
-		end
-	end
-
-	vim.keymap.set('n', 'w', generate_buf_scroll('W'), { buffer = buf_id, remap = false })
-	vim.keymap.set('n', 'b', generate_buf_scroll('Wb'), { buffer = buf_id, remap = false })
-	vim.keymap.set('n', '<S-ScrollWheelUp>', 'w', { buffer = buf_id, remap = true })
-	vim.keymap.set('n', '<S-ScrollWheelDown>', 'b', { buffer = buf_id, remap = true })
-end
-
-local function setup_keymaps(buf_type, buf_id)
-	if buf_type == 'tree' then
-		setup_tree_keymaps(buf_id)
-	elseif buf_type == 'terminal' then
-		setup_terminal_keymaps(buf_id)
-	elseif buf_type == 'bufferbar' then
-		setup_bufferbar_keymaps(buf_id)
-	end
-end
+local left = config.options.layout.left.module
+local right = config.options.layout.right.module
+local top = config.options.layout.top.module
+local bottom = config.options.layout.bottom.module
 
 M.win_structure = {}
 M.height_ratio = 1
@@ -147,11 +70,14 @@ local function parse_layout()
 	local wins = vim.api.nvim_tabpage_list_wins(0)
 	M.win_structure = {}
 	if #wins == 1 then return end
-	local file_tree_width = config.options.file_tree.win_opts.width
-	local buffer_bar_height = config.options.buffer_bar.win_opts.height
-	local terminal_height = config.options.terminal.win_opts.height
-	local height_reduction = buffer_bar_height + terminal_height
-	M.width_ratio = (vim.o.columns - file_tree_width) / vim.o.columns
+	local l_width = config.options.layout.left.width
+	local r_width = config.options.layout.right.width
+	local t_height = config.options.layout.top.height
+	local b_height = config.options.layout.bottom.height
+
+	local width_reduction = l_width + r_width
+	local height_reduction = t_height + b_height
+	M.width_ratio = (vim.o.columns - width_reduction) / vim.o.columns
 	M.height_ratio = (vim.o.lines - height_reduction) / vim.o.lines
 
 	local initial_entry = {
@@ -195,23 +121,66 @@ local function open_wins()
 	vim.api.nvim_set_current_win(state.wins.main)
 end
 
-function M.close_layout()
+local function get_panel_from_direction(direction)
+	if direction == pos.left then return config.options.layout.left
+	elseif direction == pos.right then return config.options.layout.right
+	elseif direction == pos.top then return config.options.layout.top
+	elseif direction == pos.bottom then return config.options.layout.bottom end
+end
+
+local function close_panel(module)
+	if not module then return end
+
+	utils.close_win(module.state.window)
+	utils.delete_buf(module.state.buffer)
+	module.state.window = -1
+	module.state.buffer = -1
+end
+
+local function open_panel(direction)
+	local panel = get_panel_from_direction(direction)
+	if not panel.module then return end
+
+	local listed = panel.module.config.options.buffer.listed
+	local scratch = panel.module.config.options.buffer.scratch
+	local buf = vim.api.nvim_create_buf(listed, scratch)
+
+	panel.module.state.buffer = buf
+
+	local opts = panel.module.config.options.window.start_opts
+	opts.split = direction
+	if direction == pos.left or direction == pos.right then
+		opts.vertical = true
+		opts.width = panel.width
+	else
+		opts.height = panel.height
+	end
+
+	local win = vim.api.nvim_open_win(buf, false, opts)
+	panel.module.state.window = win
+
+	panel.module.ui.render()
+
+	panel.module.keymaps.setup()
+
+	local buf_opts = panel.module.config.options.buffer.opts
+	for key, val in pairs(buf_opts) do
+		vim.api.nvim_set_option_value(key, val, { scope = 'local', buf = buf })
+	end
+
+	local win_opts = panel.module.config.options.window.opts
+	for key, val in pairs(win_opts) do
+		vim.api.nvim_set_option_value(key, val, { scope = 'local', win = win })
+	end
+end
+
+function M.close()
 	utils.check_or_make_main_win()
 
-	close_win(state.wins.file_tree)
-	close_buf(state.bufs.file_tree)
-	state.wins.file_tree = -1
-	state.bufs.file_tree = -1
-
-	close_win(state.wins.buffer_bar)
-	close_buf(state.bufs.buffer_bar)
-	state.wins.buffer_bar = -1
-	state.bufs.buffer_bar = -1
-
-	close_win(state.wins.terminal)
-	close_buf(state.bufs.terminal)
-	state.wins.terminal = -1
-	state.bufs.terminal = -1
+	close_panel(left)
+	close_panel(right)
+	close_panel(top)
+	close_panel(bottom)
 
 	if state.equalalways then
 		vim.opt.equalalways = true
@@ -220,62 +189,23 @@ function M.close_layout()
 	state.active = false
 end
 
-function M.make_layout()
-	M.close_layout()
+function M.open()
+	M.close()
 	if state.equalalways then
 		vim.opt.equalalways = false
 	end
 	parse_layout()
 
-	local tree_buf = vim.api.nvim_create_buf(false, true)
-	local buf_bar_buf = vim.api.nvim_create_buf(false, true)
-	local term_buf = vim.api.nvim_create_buf(true, false)
+	open_panel(config.options.split_order.first)
+	open_panel(config.options.split_order.second)
+	open_panel(config.options.split_order.third)
+	open_panel(config.options.split_order.fourth)
 
-	state.bufs.file_tree = tree_buf
-	state.bufs.buffer_bar = buf_bar_buf
-	state.bufs.terminal = term_buf
-
-	local tree_opts = config.options.file_tree.win_opts
-	local buf_bar_opts = config.options.buffer_bar.win_opts
-	local term_opts = config.options.terminal.win_opts
-
-	state.wins.file_tree = vim.api.nvim_open_win(tree_buf, false, tree_opts)
-	state.wins.buffer_bar = vim.api.nvim_open_win(buf_bar_buf, false, buf_bar_opts)
-	state.wins.terminal = vim.api.nvim_open_win(term_buf, false, term_opts)
-
-	-- vim.api.nvim_open_term(term_buf, {})
-	vim.api.nvim_buf_call(term_buf, function () vim.cmd.terminal() end)
-
-	vim.bo[tree_buf].modifiable = false
-	vim.wo[state.wins.file_tree].wrap = false
-	vim.wo[state.wins.file_tree].number = false
-	vim.wo[state.wins.file_tree].winfixbuf = true
-	vim.wo[state.wins.file_tree].statusline = ''
-
-	vim.bo[buf_bar_buf].modifiable = false
-	vim.bo[buf_bar_buf].buflisted = false
-	vim.wo[state.wins.buffer_bar].wrap = false
-	vim.wo[state.wins.buffer_bar].winfixbuf = true
-	vim.wo[state.wins.buffer_bar].statusline = ''
-
-	vim.bo[term_buf].buflisted = false
-	vim.wo[state.wins.terminal].winfixbuf = true
-	vim.wo[state.wins.terminal].statusline = ''
-
-	setup_keymaps('tree', tree_buf)
-	setup_keymaps('terminal', term_buf)
-	setup_keymaps('bufferbar', buf_bar_buf)
-
-	tree.render()
-	bufferbar.render()
-
-	vim.api.nvim_create_augroup('IDEifyBufferBar', { clear = true })
-	vim.api.nvim_create_autocmd('BufEnter', {
-		group = 'IDEifyBufferBar',
-		callback = function()
-			vim.defer_fn(bufferbar.render, 10)
-		end
-	})
+	-- I have to do this to get it to reload for some reason
+	left = config.options.layout.left.module
+	right = config.options.layout.right.module
+	top = config.options.layout.top.module
+	bottom = config.options.layout.bottom.module
 
 	open_wins()
 	state.active = true

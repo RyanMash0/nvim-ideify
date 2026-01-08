@@ -1,6 +1,7 @@
 local M = {}
-local config = require('nvim-ideify.config')
-local state = require('nvim-ideify.state')
+local config = require('nvim-ideify.bufferbar.config')
+local state = require('nvim-ideify.bufferbar.state')
+local g_state = require('nvim-ideify.state')
 local utils = require('nvim-ideify.utils')
 
 local function truncate_end(str, num)
@@ -27,10 +28,9 @@ local function extend_length(str, num)
 end
 
 function M.switch_buffer()
-	local buf_id = state.bufs.buffer_bar
-	local win_id = state.wins.buffer_bar
+	local win_id = state.window
 	local cur_col = vim.api.nvim_win_get_cursor(win_id)[2]
-	local buffer_info = vim.b[buf_id].buffer_info
+	local buffer_info = state.buffer_info
 	local switch_buf
 	for key, val in pairs(buffer_info) do
 		if val ~= vim.NIL and cur_col >= val.first and cur_col <= val.last then
@@ -39,19 +39,18 @@ function M.switch_buffer()
 		end
 	end
 	utils.check_or_make_main_win()
-	vim.api.nvim_win_set_buf(state.wins.main, switch_buf)
+	vim.api.nvim_win_set_buf(g_state.wins.main, switch_buf)
 end
 
 function M.highlight()
-	local buf_id = state.bufs.buffer_bar
-	local ns = state.namespaces.buffer_bar
-	vim.api.nvim_buf_clear_namespace(buf_id, ns, 0, -1)
 	utils.check_or_make_main_win()
-	local main_win = state.wins.main
-	local cur_buf = vim.api.nvim_win_get_buf(main_win)
-	local hl_region = vim.b[buf_id].buffer_info[cur_buf]
+	local buf_id = state.buffer
+	local ns = state.namespace
+	vim.api.nvim_buf_clear_namespace(buf_id, ns, 0, -1)
+	local cur_buf = vim.api.nvim_win_get_buf(0)
+	local hl_region = state.buffer_info[cur_buf]
 	local hl_group = vim.api.nvim_get_hl_id_by_name('TabLineSel')
-	if not hl_region then return end
+	if not hl_region or hl_region == vim.NIL then return end
 	vim.api.nvim_buf_set_extmark(buf_id, ns, 0, hl_region.first, {
 		end_col = hl_region.last,
 		hl_group = hl_group
@@ -63,7 +62,7 @@ function M.highlight()
 end
 
 function M.render()
-	local buf_id = state.bufs.buffer_bar
+	local buf_id = state.buffer
 	if not buf_id or not vim.api.nvim_buf_is_valid(buf_id) then return end
 	local buffers = vim.api.nvim_list_bufs()
 	local normal_buffers = {}
@@ -84,19 +83,21 @@ function M.render()
 	local dir_name
 	local file_str = ''
 	local dir_str = ''
-	local truncate_len = config.options.buffer_bar.name_max_length
+	local pref_len = config.options.name_pref_length
+	local truncate_len
 	local max_len
 	local abs_path
 	for _, buf in ipairs(normal_buffers) do
 		buf_name = vim.api.nvim_buf_get_name(buf)
 
-		file_name = buf_name:match('[^/]+$') or ''
-		file_name = truncate_end(file_name, truncate_len)
-
 		abs_path = vim.fs.abspath('.'):gsub('[%(%)%.%%%+%-%*%?%[%]%^%$]', '%%%0')
 		dir_name = buf_name:gsub(abs_path .. '/', '')
 		dir_name = './' .. dir_name:gsub('[^/]+$', '')
-		dir_name = truncate_middle(dir_name, #file_name)
+		dir_name = truncate_middle(dir_name, pref_len)
+
+		truncate_len = math.max(pref_len, #dir_name)
+		file_name = buf_name:match('[^/]+$') or ''
+		file_name = truncate_end(file_name, truncate_len)
 
 		max_len = math.max(#dir_name, #file_name)
 
@@ -108,7 +109,7 @@ function M.render()
 		dir_str = dir_str .. ' ' .. dir_name .. ' \u{2502}'
 	end
 
-	vim.b[buf_id].buffer_info = buffer_info
+	state.buffer_info = buffer_info
 	vim.bo[buf_id].modifiable = true
 	vim.api.nvim_buf_set_lines(buf_id, 0, -1, true, {dir_str, file_str})
 	vim.bo[buf_id].modifiable = false

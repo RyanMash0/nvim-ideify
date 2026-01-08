@@ -1,22 +1,22 @@
 local M = {}
 local config = require('nvim-ideify.config')
 local ui = require('nvim-ideify.ui')
-local tree = require('nvim-ideify.tree')
+local filetree = require('nvim-ideify.filetree')
 local bufferbar = require('nvim-ideify.bufferbar')
 
-M.open = ui.make_layout
-M.close = ui.close_layout
+M.open = ui.open
+M.close = ui.close
 M.toggle = function()
 	local state = require('nvim-ideify.state')
 	if state.active then
-		ui.close_layout()
+		ui.close()
 	else
-		ui.make_layout()
+		ui.open()
 	end
 end
 
-M.refresh_tree = tree.render
-M.refresh_bufferbar = bufferbar.render
+M.refresh_tree = filetree.ui.render
+M.refresh_bufferbar = bufferbar.ui.render
 
 function M.setup(opts)
 	config.setup(opts)

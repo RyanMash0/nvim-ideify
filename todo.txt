@@ -1,0 +1,29 @@
+-------------------------------------------------------------------------------
+-- Bugs                                                                      --
+-------------------------------------------------------------------------------
+- Opening a new netrw window split (with 'o') messes up layout
+- Disable netrw in special buffers with abbreviations
+
+-------------------------------------------------------------------------------
+-- Features                                                                  --
+-------------------------------------------------------------------------------
+? Add git status highlighting to file tree/buffer bar
+? Add cache-preserve refresh to file tree (slow)
+? Add rename file in buffer bar
+? Add support for user-defined modules
+- Add buffer bar refreshes for current selected window (add to state maybe)
+- Add file tree opens in most recently visited window (use state)
+- Add active status for modules in state
+- Add terminal buffers
+- Add modified status in buffer bar
+- Allow moving tabs
+- Add rename in file tree
+- Add delete in file tree
+- Add move in file tree
+- Add add in file tree
+- Add type annotations
+- Add documentation
+
+-------------------------------------------------------------------------------
+-- Refactor                                                                  --
+-------------------------------------------------------------------------------

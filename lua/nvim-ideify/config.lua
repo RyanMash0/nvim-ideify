@@ -1,34 +1,40 @@
 local M = {}
+local pos = require('nvim-ideify.position')
 
 M.defaults = {
-	file_tree = {
-		win_opts = {
-			vertical = true,
+	layout = {
+		left = {
+			module = require('nvim-ideify.filetree'),
 			width = 30,
-			split = 'left',
 		},
-		cache = true,
-		header = nil,
-	},
-	buffer_bar = {
-		win_opts = {
+		right = {
+			module = nil,
+			width = 0,
+		},
+		top = {
+			module = require('nvim-ideify.bufferbar'),
 			height = 2,
-			split = 'above',
-			style = 'minimal',
 		},
-		name_max_length = 20,
-	},
-	terminal = {
-		win_opts = {
+		bottom = {
+			module = require('nvim-ideify.terminal'),
 			height = 10,
-			split = 'below',
 		},
+	},
+	split_order = {
+		first = pos.left,
+		second = pos.right,
+		third = pos.top,
+		fourth = pos.bottom,
 	},
 }
 
 M.options = vim.deepcopy(M.defaults)
 
 function M.setup(opts)
+	require('nvim-ideify.filetree.config').setup(opts.filetree)
+	require('nvim-ideify.bufferbar.config').setup(opts.bufferbar)
+	require('nvim-ideify.terminal.config').setup(opts.terminal)
+
 	M.options = vim.tbl_deep_extend('force', M.defaults, opts or {})
 end
 

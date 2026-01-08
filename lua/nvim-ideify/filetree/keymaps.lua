@@ -15,12 +15,8 @@ function M.setup()
 	vim.keymap.set('n', '<S-CR>', descend, opts)
 	vim.keymap.set('n', '<C-M>', action, opts)
 	vim.keymap.set('n', '<S-C-M>', descend, opts)
-	vim.keymap.set('n', '<LeftMouse>', function ()
-		if vim.fn.getmousepos().winid ~= state.window then
-			return '<LeftMouse>' end
-		action()
-		return '<LeftMouse>'
-	end, opts)
+
+	state.on_click = action
 end
 
 return M

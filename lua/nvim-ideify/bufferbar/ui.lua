@@ -39,7 +39,10 @@ function M.switch_buffer()
 		end
 	end
 	utils.check_or_make_main_win()
-	vim.api.nvim_win_set_buf(g_state.wins.main, switch_buf)
+	local last_win =
+		utils.is_valid(g_state.wins.last, 'window') and g_state.wins.last
+
+	vim.api.nvim_win_set_buf(last_win or g_state.wins.main, switch_buf)
 end
 
 function M.highlight()
@@ -47,7 +50,9 @@ function M.highlight()
 	local buf_id = state.buffer
 	local ns = state.namespace
 	vim.api.nvim_buf_clear_namespace(buf_id, ns, 0, -1)
-	local cur_buf = vim.api.nvim_win_get_buf(0)
+	local last_win =
+		utils.is_valid(g_state.wins.last, 'window') and g_state.wins.last
+	local cur_buf = vim.api.nvim_win_get_buf(last_win or g_state.wins.main)
 	local hl_region = state.buffer_info[cur_buf]
 	local hl_group = vim.api.nvim_get_hl_id_by_name('TabLineSel')
 	if not hl_region or hl_region == vim.NIL then return end

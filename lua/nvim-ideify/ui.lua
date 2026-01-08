@@ -207,6 +207,20 @@ function M.open()
 	top = config.options.layout.top.module
 	bottom = config.options.layout.bottom.module
 
+	vim.keymap.set('n', '<LeftMouse>', function()
+		local win = vim.fn.getmousepos().winid
+		if left and win == left.state.window and left.state.on_click then
+			left.state.on_click()
+		elseif right and win == right.state.window and right.state.on_click then
+			right.state.on_click()
+		elseif top and win == top.state.window and top.state.on_click then
+			top.state.on_click()
+		elseif bottom and win == bottom.state.window and bottom.state.on_click then
+			bottom.state.on_click()
+		end
+		return '<LeftMouse>'
+	end, { expr = true, remap = false })
+
 	open_wins()
 	state.active = true
 end

@@ -154,8 +154,10 @@ function M.action()
 	local parent = tree[line]
 	if parent.type == 'file' then
 		utils.check_or_make_main_win()
-		local main_win = g_state.wins.main
-		vim.api.nvim_set_current_win(main_win)
+		local last_win =
+			utils.is_valid(g_state.wins.last, 'window') and g_state.wins.last
+		local win = last_win or g_state.wins.main
+		vim.api.nvim_set_current_win(win)
 		vim.cmd('edit ' .. parent.path)
 		vim.api.nvim_set_current_win(state.window)
 		return

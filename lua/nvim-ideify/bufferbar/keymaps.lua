@@ -8,13 +8,8 @@ function M.setup()
 
 	vim.keymap.set('n', '<CR>', switch, opts)
 	vim.keymap.set('n', '<C-M>', switch, opts)
-	vim.keymap.set('n', '<LeftMouse>', function()
-		if vim.fn.getmousepos().winid ~= state.wins.buffer_bar then
-			return '<LeftMouse>'
-		end
-		switch()
-		return '<LeftMouse>'
-	end, opts)
+
+	state.on_click = switch
 
 	local function generate_buf_scroll(flags)
 		return function()

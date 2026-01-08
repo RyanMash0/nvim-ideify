@@ -11,9 +11,7 @@
 ? Add cache-preserve refresh to file tree (slow)
 ? Add rename file in buffer bar
 ? Add support for user-defined modules
-- Add buffer bar refreshes for current selected window (add to state maybe)
-- Add file tree opens in most recently visited window (use state)
-- Add active status for modules in state
+? Add active status for modules in state
 - Add terminal buffers
 - Add modified status in buffer bar
 - Allow moving tabs
@@ -23,6 +21,7 @@
 - Add add in file tree
 - Add type annotations
 - Add documentation
+- Add health
 
 -------------------------------------------------------------------------------
 -- Refactor                                                                  --

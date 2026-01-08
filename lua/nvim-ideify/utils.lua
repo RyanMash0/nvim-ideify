@@ -30,7 +30,7 @@ local function get_split_opts(plugin_wins)
 	end
 end
 
-local function is_valid(variable, check_type)
+function M.is_valid(variable, check_type)
 	if type(variable) ~= 'number' then return false end
 	if check_type == 'window' and not vim.api.nvim_win_is_valid(variable) then
 		return false
@@ -53,10 +53,10 @@ local function check_or_make_main_buf()
 	local r_buf_id = right and right.state.buffer or -1
 	local t_buf_id = top and top.state.buffer or -1
 	local b_buf_id = bottom and bottom.state.buffer or -1
-	local l_buf_exists = is_valid(l_buf_id, 'buffer')
-	local r_buf_exists = is_valid(r_buf_id, 'buffer')
-	local t_buf_exists = is_valid(t_buf_id, 'buffer')
-	local b_buf_exists = is_valid(b_buf_id, 'buffer')
+	local l_buf_exists = M.is_valid(l_buf_id, 'buffer')
+	local r_buf_exists = M.is_valid(r_buf_id, 'buffer')
+	local t_buf_exists = M.is_valid(t_buf_id, 'buffer')
+	local b_buf_exists = M.is_valid(b_buf_id, 'buffer')
 
 	local exclude_bufs = {
 		[l_buf_id] = l_buf_exists,
@@ -97,10 +97,10 @@ function M.check_or_make_main_win()
 	local r_win_id = right and right.state.window or -1
 	local t_win_id = top and top.state.window or -1
 	local b_win_id = bottom and bottom.state.window or -1
-	local l_win_exists = is_valid(l_win_id, 'window')
-	local r_win_exists = is_valid(r_win_id, 'window')
-	local t_win_exists = is_valid(t_win_id, 'window')
-	local b_win_exists = is_valid(b_win_id, 'window')
+	local l_win_exists = M.is_valid(l_win_id, 'window')
+	local r_win_exists = M.is_valid(r_win_id, 'window')
+	local t_win_exists = M.is_valid(t_win_id, 'window')
+	local b_win_exists = M.is_valid(b_win_id, 'window')
 
 	local exclude_wins = {
 		[l_win_id] = l_win_exists,

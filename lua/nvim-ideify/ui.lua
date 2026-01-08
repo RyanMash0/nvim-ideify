@@ -137,6 +137,17 @@ local function close_panel(module)
 	module.state.buffer = -1
 end
 
+local function hide_panel(module)
+	if not module then return end
+
+	if utils.is_valid(module.state.window, 'window') then
+		module.state.win_config = vim.api.nvim_win_get_config(module.state.window)
+	end
+
+	utils.close_win(module.state.window)
+	module.state.window = -1
+end
+
 local function open_panel(direction)
 	local panel = get_panel_from_direction(direction)
 	if not panel.module then return end
@@ -156,6 +167,8 @@ local function open_panel(direction)
 		opts.height = panel.height
 	end
 
+	panel.module.state.win_config = opts
+
 	local win = vim.api.nvim_open_win(buf, false, opts)
 	panel.module.state.window = win
 
@@ -174,8 +187,25 @@ local function open_panel(direction)
 	end
 end
 
+local function unhide_panel(direction)
+	local panel = get_panel_from_direction(direction)
+	if not panel.module then return end
+
+	local opts = panel.module.state.win_config
+	local win = vim.api.nvim_open_win(panel.module.state.buffer, false, opts)
+	panel.module.state.window = win
+
+	local win_opts = panel.module.config.options.window.opts
+	for key, val in pairs(win_opts) do
+		vim.api.nvim_set_option_value(key, val, { scope = 'local', win = win })
+	end
+end
+
 function M.close()
 	utils.check_or_make_main_win()
+
+	state.active = false
+	state.opened = false
 
 	close_panel(left)
 	close_panel(right)
@@ -185,8 +215,6 @@ function M.close()
 	if state.equalalways then
 		vim.opt.equalalways = true
 	end
-
-	state.active = false
 end
 
 function M.open()
@@ -223,6 +251,84 @@ function M.open()
 
 	open_wins()
 	state.active = true
+	state.opened = true
+end
+
+function M.hide()
+	utils.check_or_make_main_win()
+
+	state.active = false
+
+	hide_panel(left)
+	hide_panel(right)
+	hide_panel(top)
+	hide_panel(bottom)
+
+	if state.equalalways then
+		vim.opt.equalalways = true
+	end
+end
+
+function M.show()
+	M.hide()
+	if state.equalalways then
+		vim.opt.equalalways = false
+	end
+	parse_layout()
+
+	unhide_panel(config.options.split_order.first)
+	unhide_panel(config.options.split_order.second)
+	unhide_panel(config.options.split_order.third)
+	unhide_panel(config.options.split_order.fourth)
+
+	-- I have to do this to get it to reload for some reason
+	left = config.options.layout.left.module
+	right = config.options.layout.right.module
+	top = config.options.layout.top.module
+	bottom = config.options.layout.bottom.module
+
+	vim.keymap.set('n', '<LeftMouse>', function()
+		local win = vim.fn.getmousepos().winid
+		if left and win == left.state.window and left.state.on_click then
+			left.state.on_click()
+		elseif right and win == right.state.window and right.state.on_click then
+			right.state.on_click()
+		elseif top and win == top.state.window and top.state.on_click then
+			top.state.on_click()
+		elseif bottom and win == bottom.state.window and bottom.state.on_click then
+			bottom.state.on_click()
+		end
+		return '<LeftMouse>'
+	end, { expr = true, remap = false })
+
+	open_wins()
+	state.active = true
+end
+
+local function panel_size_reset(direction)
+	local panel = get_panel_from_direction(direction)
+	if not panel.module then return end
+
+	local opts
+	if direction == pos.left or direction == pos.right then
+		opts = { width = panel.width }
+	else
+		opts = { height = panel.height }
+	end
+
+	vim.api.nvim_win_set_config(panel.module.state.window, opts)
+
+	panel.module.state.win_config =
+		vim.api.nvim_win_get_config(panel.module.state.window)
+end
+
+function M.reset()
+	M.show()
+
+	panel_size_reset(pos.left)
+	panel_size_reset(pos.right)
+	panel_size_reset(pos.top)
+	panel_size_reset(pos.bottom)
 end
 
 return M

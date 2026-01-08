@@ -10,8 +10,9 @@
 ? Add git status highlighting to file tree/buffer bar
 ? Add cache-preserve refresh to file tree (slow)
 ? Add rename file in buffer bar
-? Add support for user-defined modules
-? Add active status for modules in state
+- Add minimized status for modules in state
+- Make a floating window for a minimize button (do this in main ui)
+- Add option to make buffer bar one line (style = detailed ?)
 - Add terminal buffers
 - Add modified status in buffer bar
 - Allow moving tabs

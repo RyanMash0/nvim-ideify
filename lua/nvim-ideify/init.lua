@@ -6,14 +6,19 @@ local bufferbar = require('nvim-ideify.bufferbar')
 
 M.open = ui.open
 M.close = ui.close
+M.hide = ui.hide
+M.show = ui.show
 M.toggle = function()
 	local state = require('nvim-ideify.state')
 	if state.active then
-		ui.close()
-	else
+		ui.hide()
+	elseif not state.active and state.opened then
+		ui.show()
+	elseif not state.active and not state.opened then
 		ui.open()
 	end
 end
+M.reset = ui.reset
 
 M.refresh_tree = filetree.ui.render
 M.refresh_bufferbar = bufferbar.ui.render
@@ -27,7 +32,7 @@ end
 vim.api.nvim_create_augroup('IDEify', { clear = true })
 vim.api.nvim_create_autocmd('WinEnter', {
 	group = 'IDEify',
-	callback = vim.schedule_wrap(function()
+	callback = function()
 		local state = require('nvim-ideify.state')
 
 		local win = vim.api.nvim_get_current_win()
@@ -43,7 +48,17 @@ vim.api.nvim_create_autocmd('WinEnter', {
 		if win ~= l_win and win ~= r_win and win ~= t_win and win ~= b_win then
 			state.wins.last = win
 		end
-	end)
+	end
+})
+
+vim.api.nvim_create_autocmd('WinClosed', {
+	group = 'IDEify',
+	callback = function()
+		local state = require('nvim-ideify.state')
+		if state.opened and state.active then
+			ui.show()
+		end
+	end
 })
 
 return M

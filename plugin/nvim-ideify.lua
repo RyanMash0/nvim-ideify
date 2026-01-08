@@ -16,8 +16,26 @@ vim.api.nvim_create_user_command(
 )
 
 vim.api.nvim_create_user_command(
+	'IDEifyHide',
+	require('nvim-ideify').hide,
+	{ nargs = 0 }
+)
+
+vim.api.nvim_create_user_command(
+	'IDEifyShow',
+	require('nvim-ideify').show,
+	{ nargs = 0 }
+)
+
+vim.api.nvim_create_user_command(
 	'IDEifyToggle',
 	require('nvim-ideify').toggle,
+	{ nargs = 0 }
+)
+
+vim.api.nvim_create_user_command(
+	'IDEifyResetSize',
+	require('nvim-ideify').reset,
 	{ nargs = 0 }
 )
 

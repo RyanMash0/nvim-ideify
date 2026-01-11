@@ -4,10 +4,11 @@ local state = require('nvim-ideify.state')
 local utils = require('nvim-ideify.utils')
 local pos = require('nvim-ideify.position')
 
-local left = config.options.layout.left.module()
-local right = config.options.layout.right.module()
-local top = config.options.layout.top.module()
-local bottom = config.options.layout.bottom.module()
+local modules = utils.get_modules()
+local left = modules.left
+local right = modules.right
+local top = modules.top
+local bottom = modules.bottom
 
 M.win_structure = {}
 M.height_ratio = 1
@@ -99,6 +100,7 @@ end
 local function open_wins()
 	vim.api.nvim_set_current_win(state.wins.main)
 	local win
+	local prev_win
 	local split
 	local win_id
 
@@ -114,7 +116,9 @@ local function open_wins()
 
 			for k = 2, #M.win_structure[i][j].wins do
 				win = M.win_structure[i][j].wins[k]
+				prev_win = M.win_structure[i][j].wins[k - 1]
 				win.id = vim.api.nvim_open_win(win.buffer, true, win.config)
+				vim.api.nvim_win_set_config(prev_win.id, prev_win.config)
 			end
 		end
 	end
@@ -140,7 +144,7 @@ end
 local function hide_panel(module)
 	if not module then return end
 
-	if utils.is_valid(module:get_state():get_window(), 'window') then
+	if utils.win_valid(module:get_state():get_window()) then
 		module:get_state():set_win_config(
 			vim.api.nvim_win_get_config(module:get_state():get_window())
 		)
@@ -321,7 +325,9 @@ local function panel_size_reset(direction)
 	else
 		opts = { height = panel.height }
 	end
+	opts.split = direction
 
+	vim.api.nvim_set_current_win(state.wins.main)
 	vim.api.nvim_win_set_config(panel.module():get_state():get_window(), opts)
 
 	panel.module():get_state():set_win_config(
@@ -331,11 +337,14 @@ end
 
 function M.reset()
 	M.show()
+	parse_layout()
 
-	panel_size_reset(pos.left)
-	panel_size_reset(pos.right)
-	panel_size_reset(pos.top)
-	panel_size_reset(pos.bottom)
+	panel_size_reset(config.options.split_order.first)
+	panel_size_reset(config.options.split_order.second)
+	panel_size_reset(config.options.split_order.third)
+	panel_size_reset(config.options.split_order.fourth)
+
+	open_wins()
 end
 
 return M

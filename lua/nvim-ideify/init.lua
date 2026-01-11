@@ -34,18 +34,11 @@ vim.api.nvim_create_autocmd('WinEnter', {
 	group = 'IDEify',
 	callback = function()
 		local state = require('nvim-ideify.state')
+		local utils = require('nvim-ideify.utils')
 
 		local win = vim.api.nvim_get_current_win()
-		local left = config.options.layout.left.module()
-		local right = config.options.layout.right.module()
-		local top = config.options.layout.top.module()
-		local bottom = config.options.layout.bottom.module()
 
-		local l_win = left and left:get_state():get_window() or -1
-		local r_win = right and right:get_state():get_window() or -1
-		local t_win = top and top:get_state():get_window() or -1
-		local b_win = bottom and bottom:get_state():get_window() or -1
-		if win ~= l_win and win ~= r_win and win ~= t_win and win ~= b_win then
+		if not utils.is_plugin_win(win) then
 			state.wins.last = win
 		end
 	end
@@ -54,8 +47,12 @@ vim.api.nvim_create_autocmd('WinEnter', {
 vim.api.nvim_create_autocmd('WinClosed', {
 	group = 'IDEify',
 	callback = function()
+		local utils = require('nvim-ideify.utils')
 		local state = require('nvim-ideify.state')
-		if state.opened and state.active then
+
+		local win = vim.api.nvim_get_current_win()
+
+		if state.opened and state.active and utils.is_plugin_win(win) then
 			ui.show()
 		end
 	end

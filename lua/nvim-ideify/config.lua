@@ -4,19 +4,27 @@ local pos = require('nvim-ideify.position')
 M.defaults = {
 	layout = {
 		left = {
-			module = require('nvim-ideify.filetree'),
+			module = function ()
+				return require('nvim-ideify.filetree')
+			end,
 			width = 30,
 		},
 		right = {
-			module = nil,
+			module = function ()
+				return nil
+			end,
 			width = 0,
 		},
 		top = {
-			module = require('nvim-ideify.bufferbar'),
+			module = function ()
+				return require('nvim-ideify.bufferbar')
+			end,
 			height = 2,
 		},
 		bottom = {
-			module = require('nvim-ideify.terminal'),
+			module = function ()
+				return require('nvim-ideify.terminal')
+			end,
 			height = 10,
 		},
 	},
@@ -31,9 +39,9 @@ M.defaults = {
 M.options = vim.deepcopy(M.defaults)
 
 function M.setup(opts)
-	require('nvim-ideify.filetree.config').setup(opts.filetree)
-	require('nvim-ideify.bufferbar.config').setup(opts.bufferbar)
-	require('nvim-ideify.terminal.config').setup(opts.terminal)
+	require('nvim-ideify.filetree'):get_config().setup(opts.filetree)
+	require('nvim-ideify.bufferbar'):get_config().setup(opts.bufferbar)
+	require('nvim-ideify.terminal'):get_config().setup(opts.terminal)
 
 	M.options = vim.tbl_deep_extend('force', M.defaults, opts or {})
 end

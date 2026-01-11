@@ -1,15 +1,26 @@
 local M = {}
 
-M.ui = require('nvim-ideify.bufferbar.ui')
-M.config = require('nvim-ideify.bufferbar.config')
-M.state = require('nvim-ideify.bufferbar.state')
-M.keymaps = require('nvim-ideify.bufferbar.keymaps')
+function M:get_ui()
+	return require('nvim-ideify.bufferbar.ui')
+end
+
+function M:get_config()
+	return require('nvim-ideify.bufferbar.config')
+end
+
+function M:get_state()
+	return require('nvim-ideify.bufferbar.state')
+end
+
+function M:get_keymaps()
+	return require('nvim-ideify.bufferbar.keymaps')
+end
 
 vim.api.nvim_create_augroup('IDEifyBufferBar', { clear = true })
 vim.api.nvim_create_autocmd('BufEnter', {
 	group = 'IDEifyBufferBar',
 	callback = function()
-		vim.defer_fn(M.ui.render, 10)
+		vim.defer_fn(M:get_ui().render, 10)
 	end
 })
 

@@ -3,7 +3,7 @@ local state = require('nvim-ideify.filetree.state')
 local ui = require('nvim-ideify.filetree.ui')
 
 function M.setup()
-	local opts = { buffer = state.buffer, expr = true, remap = false }
+	local opts = { buffer = state:get_buffer(), expr = true, remap = false }
 	local action = vim.schedule_wrap(ui.action)
 	local make = vim.schedule_wrap(ui.render)
 	local descend = vim.schedule_wrap(ui.descend)
@@ -16,7 +16,7 @@ function M.setup()
 	vim.keymap.set('n', '<C-M>', action, opts)
 	vim.keymap.set('n', '<S-C-M>', descend, opts)
 
-	state.on_click = action
+	state:set_on_click(action)
 end
 
 return M

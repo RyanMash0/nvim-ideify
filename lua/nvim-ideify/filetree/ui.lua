@@ -6,7 +6,7 @@ local utils = require('nvim-ideify.utils')
 
 local function generate_tree_action(buf_id, tree, line, func)
 	vim.bo[buf_id].modifiable = true
-	state.tree = func(buf_id, tree, line)
+	state:set_tree(func(buf_id, tree, line))
 	vim.bo[buf_id].modifiable = false
 end
 
@@ -115,8 +115,8 @@ function M.change_dir(path)
 			vim.api.nvim_win_call(win, function () vim.cmd.lcd(path) end)
 		end
 		M.render()
-		vim.api.nvim_set_current_win(state.window)
-		require('nvim-ideify.bufferbar').ui.render()
+		vim.api.nvim_set_current_win(state:get_window())
+		require('nvim-ideify.bufferbar'):get_ui().render()
 	end)
 end
 
@@ -130,15 +130,15 @@ end
 
 function M.descend()
 	local line = vim.fn.line('.')
-	if state.tree[line].type ~= 'directory' then return end
-	local path = state.tree[line].path
+	if state:get_tree()[line].type ~= 'directory' then return end
+	local path = state:get_tree()[line].path
 	M.change_dir(path)
 end
 
 function M.action()
-	local buf_id = state.buffer
+	local buf_id = state:get_buffer()
 	local line = vim.fn.line('.')
-	local header_height = state.header_height
+	local header_height = state:get_header_height()
 
 	if line <= header_height then
 		return
@@ -150,7 +150,7 @@ function M.action()
 	local line_str = vim.api.nvim_buf_get_lines(buf_id, line - 1, line, true)[1]
 	line_str = line_str:gsub('| ', ''):gsub('/', ''):gsub('[>v+] ', '')
 
-	local tree = state.tree
+	local tree = state:get_tree()
 	local parent = tree[line]
 	if parent.type == 'file' then
 		utils.check_or_make_main_win()
@@ -159,7 +159,7 @@ function M.action()
 		local win = last_win or g_state.wins.main
 		vim.api.nvim_set_current_win(win)
 		vim.cmd('edit ' .. parent.path)
-		vim.api.nvim_set_current_win(state.window)
+		vim.api.nvim_set_current_win(state:get_window())
 		return
 	end
 
@@ -174,10 +174,10 @@ function M.action()
 end
 
 function M.highlight()
-	local buf_id = state.buffer
-	local ns_id = state.namespace
+	local buf_id = state:get_buffer()
+	local ns_id = state:get_namespace()
 	vim.api.nvim_buf_clear_namespace(buf_id, ns_id, 0, -1)
-	local tree = state.tree
+	local tree = state:get_tree()
 	local dir_hl = vim.api.nvim_get_hl_id_by_name('netrwDir')
 	local bar_hl = vim.api.nvim_get_hl_id_by_name('Special')
 	local plain_hl = vim.api.nvim_get_hl_id_by_name('netrwPlain')
@@ -203,8 +203,8 @@ function M.highlight()
 end
 
 function M.render()
-	local buf_id = state.buffer
-	local win_id = state.window
+	local buf_id = state:get_buffer()
+	local win_id = state:get_window()
 	local path = vim.fs.abspath('.')
 	local header_entry = {
 		depth = -1,
@@ -234,8 +234,8 @@ function M.render()
 
 	local user_header = config.options.header
 	local header_lines = user_header or {border, title_line, path_line, border}
-	state.header_height = #header_lines
-	local header_height = state.header_height
+	state:set_header_height(#header_lines)
+	local header_height = state:get_header_height()
 	table.insert(header_lines, '../')
 
 	local starting_array = {}
@@ -244,14 +244,15 @@ function M.render()
 	end
 	table.insert(starting_array, parent_dir_entry)
 
-	state.tree = starting_array
+	state:set_tree(starting_array)
 
 	vim.bo[buf_id].modifiable = true
 	vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, {})
 	vim.api.nvim_buf_set_lines(buf_id, 0, 1, true, header_lines)
 	vim.api.nvim_win_set_cursor(win_id, {header_height + 1, 0})
-	state.tree =
+	state:set_tree(
 		print_paths(buf_id, starting_array, header_height + 1)
+	)
 	vim.bo[buf_id].modifiable = false
 	M.highlight()
 end

@@ -28,9 +28,9 @@ local function extend_length(str, num)
 end
 
 function M.switch_buffer()
-	local win_id = state.window
+	local win_id = state:get_window()
 	local cur_col = vim.api.nvim_win_get_cursor(win_id)[2]
-	local buffer_info = state.buffer_info
+	local buffer_info = state:get_buffer_info()
 	local switch_buf
 	for key, val in pairs(buffer_info) do
 		if val ~= vim.NIL and cur_col >= val.first and cur_col <= val.last then
@@ -47,13 +47,13 @@ end
 
 function M.highlight()
 	utils.check_or_make_main_win()
-	local buf_id = state.buffer
-	local ns = state.namespace
+	local buf_id = state:get_buffer()
+	local ns = state:get_namespace()
 	vim.api.nvim_buf_clear_namespace(buf_id, ns, 0, -1)
 	local last_win =
 		utils.is_valid(g_state.wins.last, 'window') and g_state.wins.last
 	local cur_buf = vim.api.nvim_win_get_buf(last_win or g_state.wins.main)
-	local hl_region = state.buffer_info[cur_buf]
+	local hl_region = state:get_buffer_info()[cur_buf]
 	local hl_group = vim.api.nvim_get_hl_id_by_name('TabLineSel')
 	if not hl_region or hl_region == vim.NIL then return end
 	vim.api.nvim_buf_set_extmark(buf_id, ns, 0, hl_region.first, {
@@ -67,7 +67,7 @@ function M.highlight()
 end
 
 function M.render()
-	local buf_id = state.buffer
+	local buf_id = state:get_buffer()
 	if not buf_id or not vim.api.nvim_buf_is_valid(buf_id) then return end
 	local buffers = vim.api.nvim_list_bufs()
 	local normal_buffers = {}
@@ -114,7 +114,7 @@ function M.render()
 		dir_str = dir_str .. ' ' .. dir_name .. ' \u{2502}'
 	end
 
-	state.buffer_info = buffer_info
+	state:set_buffer_info(buffer_info)
 	vim.bo[buf_id].modifiable = true
 	vim.api.nvim_buf_set_lines(buf_id, 0, -1, true, {dir_str, file_str})
 	vim.bo[buf_id].modifiable = false

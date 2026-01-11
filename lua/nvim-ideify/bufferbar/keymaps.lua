@@ -3,13 +3,13 @@ local state = require('nvim-ideify.bufferbar.state')
 local ui = require('nvim-ideify.bufferbar.ui')
 
 function M.setup()
-	local opts = { buffer = state.buffer, expr = true, remap = false }
+	local opts = { buffer = state:get_buffer(), expr = true, remap = false }
 	local switch = vim.schedule_wrap(ui.switch_buffer)
 
 	vim.keymap.set('n', '<CR>', switch, opts)
 	vim.keymap.set('n', '<C-M>', switch, opts)
 
-	state.on_click = switch
+	state:set_on_click(switch)
 
 	local function generate_buf_scroll(flags)
 		return function()

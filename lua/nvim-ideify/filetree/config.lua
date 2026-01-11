@@ -8,7 +8,7 @@ M.defaults = {
 		opts = {
 			wrap = false,
 			number = false,
-			winfixbuf = false,
+			winfixbuf = true,
 		},
 	},
 	buffer = {

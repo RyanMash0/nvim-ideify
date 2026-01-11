@@ -1,8 +1,19 @@
 local M = {}
 
-M.ui = require('nvim-ideify.terminal.ui')
-M.config = require('nvim-ideify.terminal.config')
-M.state = require('nvim-ideify.terminal.state')
-M.keymaps = require('nvim-ideify.terminal.keymaps')
+function M:get_ui()
+	return require('nvim-ideify.terminal.ui')
+end
+
+function M:get_config()
+	return require('nvim-ideify.terminal.config')
+end
+
+function M:get_state()
+	return require('nvim-ideify.terminal.state')
+end
+
+function M:get_keymaps()
+	return require('nvim-ideify.terminal.keymaps')
+end
 
 return M

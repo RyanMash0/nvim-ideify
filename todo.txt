@@ -2,6 +2,7 @@
 -- Bugs                                                                      --
 -------------------------------------------------------------------------------
 - Opening a new netrw window split (with 'o') messes up layout
+- Splitting file tree requires hard layout reset
 - Disable netrw in special buffers with abbreviations
 
 -------------------------------------------------------------------------------
@@ -10,6 +11,7 @@
 ? Add git status highlighting to file tree/buffer bar
 ? Add cache-preserve refresh to file tree (slow)
 ? Add rename file in buffer bar
+- Add disabled config for each panel
 - Add minimized status for modules in state
 - Make a floating window for a minimize button (do this in main ui)
 - Add option to make buffer bar one line (style = detailed ?)

@@ -20,8 +20,8 @@ M.toggle = function()
 end
 M.reset = ui.reset
 
-M.refresh_tree = filetree.ui.render
-M.refresh_bufferbar = bufferbar.ui.render
+M.refresh_tree = filetree:get_ui().render
+M.refresh_bufferbar = bufferbar:get_ui().render
 
 function M.setup(opts)
 	config.setup(opts)
@@ -36,15 +36,15 @@ vim.api.nvim_create_autocmd('WinEnter', {
 		local state = require('nvim-ideify.state')
 
 		local win = vim.api.nvim_get_current_win()
-		local left = config.options.layout.left.module
-		local right = config.options.layout.right.module
-		local top = config.options.layout.top.module
-		local bottom = config.options.layout.bottom.module
+		local left = config.options.layout.left.module()
+		local right = config.options.layout.right.module()
+		local top = config.options.layout.top.module()
+		local bottom = config.options.layout.bottom.module()
 
-		local l_win = left and left.state.window or -1
-		local r_win = right and right.state.window or -1
-		local t_win = top and top.state.window or -1
-		local b_win = bottom and bottom.state.window or -1
+		local l_win = left and left:get_state():get_window() or -1
+		local r_win = right and right:get_state():get_window() or -1
+		local t_win = top and top:get_state():get_window() or -1
+		local b_win = bottom and bottom:get_state():get_window() or -1
 		if win ~= l_win and win ~= r_win and win ~= t_win and win ~= b_win then
 			state.wins.last = win
 		end

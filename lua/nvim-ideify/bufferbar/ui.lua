@@ -6,7 +6,7 @@ local utils = require('nvim-ideify.utils')
 
 local function truncate_end(str, num)
 	if #str <= num then return str end
-	return str:sub(num - 3) .. '...'
+	return str:sub(1, num - 3) .. '...'
 end
 
 local function truncate_middle(str, num)

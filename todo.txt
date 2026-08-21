@@ -10,6 +10,11 @@
 ? Render debounce
 ? Investigate semi-global table
 ? Add sorting support for file tree
+- Add modified status to file tree
+- Add show open files in file tree
+- Add current line selection for new file and new directory
+- Add old name typed out in rename file
+- Add file and folder permissions view to file tree
 - Add support for links in file tree
 - Add state saving on exit (SessionWritePre, SessionLoadPost)
 - Add documentation to functions

@@ -7,6 +7,8 @@ local ui = require('nvim-panels.ui')
 
 local bufferbar = require('nvim-panels.bufferbar')
 
+local nvim_version = vim.version()
+
 M.open = ui.open
 M.close = ui.close
 M.hide = ui.hide
@@ -112,6 +114,8 @@ vim.api.nvim_create_autocmd('WinResized', {
 		end
 	end
 })
+
+if nvim_version.major == 0 and nvim_version.minor < 13 then return M end
 
 vim.api.nvim_create_autocmd('SessionWritePre', {
 	group = 'Panels',
